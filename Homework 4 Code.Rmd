@@ -1,0 +1,59 @@
+---
+title: "Code"
+output: html_document
+date: "2023-10-29"
+---
+```{r}
+library(here)
+library(sf)
+library(tidyverse)
+library(janitor)
+library(countrycode)
+library(usethis)
+library(gitcreds)
+#load packages
+
+csv <- read_csv(here::here("HDR21-22_Composite_indices_complete_time_series.csv"), locale = locale(encoding = "latin1"), na = " ", skip=0)
+#read CSV file
+#encoding = latin1
+#na values represented by space
+#do not skip any lines	
+
+world <- st_read(here("World_Countries_Generalized.shp"))
+#read world shapefile
+
+csv <- csv %>%
+	clean_names()
+#clean and standardise naming conventions
+
+
+csv_select <- csv %>%
+	select(iso3, country, gii_2019, gii_2010)
+#select relevant columns 
+
+csv_select <- csv_select %>%
+	mutate(difference_in_gii = gii_2019 - gii_2010)
+#add new column to calculate difference
+
+csv_select <- csv_select %>%
+ mutate(iso2 = countrycode(country, origin="country.name", destination="iso2c"))
+#countrycode package to convert name to iso2c
+
+world_join <- world %>%
+	clean_names() %>%
+	left_join(., csv_select, by=c("country"="country"))
+#note lower case for COUNTRY because of clean_names()
+
+##Alternative join by ISO##
+#world_join2 <- world %>%
+#	clean_names() %>%
+#	left_join(csv_select, by = c("iso" = "iso2"))
+##note lower case for iso because of clean_names()
+
+plot(world_join$difference_in_gii)
+#plot histogram
+
+plot(world_join["difference_in_gii"])
+#plot world map
+```
+
